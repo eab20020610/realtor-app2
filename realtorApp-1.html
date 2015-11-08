@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="Realtor Application">
+        <meta name="author" content="Jia Liu">
+        <title>Realtor Application</title>
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <script type="text/javascript" src="Ajax.js"></script>
+    </head>
+
+<body>
+	<header>
+        <hgroup > 
+            <img src="headerImg.jpg" width=100% />
+            <h2>My Properties</h2>           
+        </hgroup>
+	</header>
+	
+<div id="main" class="clearfix">
+    <aside>    
+        <h4>Enter Property Address</h4>   
+            <form id="search">
+                Address<br>
+                <input type="text" name="address" id="txtAddress"required /><br>
+                City<br>
+                <input type="text" name="city" id="txtCity" required /><br>
+                State<br>
+                <input type="text" name="state" id="txtState" /><br>
+                Zip<br>
+                <input type="number" pattern="[0-9]*" maxlength="5" min="0" name="zip" id="txtZipCode" /><br><br>
+                <input name="submit" id="getdata" type="button" value="Submit"/><br><br>
+                <button name="addList">Add Property To List</button>
+            </form>
+            <br>
+            <div id="response"></div>
+            <ul>
+                <li> address<br>
+                    [view] [delete]
+                </li>
+            </ul>  
+    </aside>
+    <!--script for rest call-->
+    <script type="text/javascript">
+        
+        //create global variables
+        var data, url;
+        
+        //add event listener to dropdown
+        document.getElementById('getdata').addEventListener('click',getData,false);
+        
+        
+        function getData(){
+            var zipCode = document.getElementById("txtZipCode").value;
+            console.log(zipCode);
+
+            var city = document.getElementById("txtCity").value;
+            var address = document.getElementById("txtAddress").value;
+            var state = document.getElementById("txtState").value;
+            var host = "http://www.zillow.com/webservice/GetDeepSearchResults.htm";
+            var zillowId =  "?zws-id=X1-ZWz1a2se2252bv_59mre";            
+            var queryString = "&address=" + address + "&citystatezip=" + city + " " + state + " " + zipCode; 
+             
+            var url = host + zillowId + queryString;
+            var url = encodeURIComponent(url);
+            //create url string to get xml data.  This string will be sent to the server.
+            console.log(url);
+            //console.log(state);
+
+            //send xml request
+            //NOTE: JavaScript does not allow you to do cross domain requests so we have to make the 
+            //request to the server then use the request module to get the data.
+            Ajax.sendRequest(url, handleRequest);
+        }
+
+        function handleRequest(req)
+        {
+            //usually when getting xml data you would use req.responseXML
+            //however in this case I had to use req.responseText and then
+            //covert it to an xml object.
+
+            console.log("Inside HandleRequest");
+            //var xml = req.responseText;
+            //xml = textToXML(xml);
+            var response = document.getElementById('response');
+            
+            
+            var items = xml.getElementsByTagName('item');
+            var address = xml.getElementsByTagName('address');
+            var city = xml.getElementsByTagName('city');
+            var state = xml.getElementsByTagName('state');
+            var zipcode = xml.getElementsByTagName('zipcode');
+            var latitude = xml.getElementsByTagName("lantitude");
+            var longitude = xml.getElementsByTagName("longitude");
+
+            
+            //get the lenth of the path same as title
+            var len = items.length;
+            
+            //put output into table
+            var output = '<table><thead><tr><th>Address</th><th>City</th>th>State</th>th>Zip Code</th></tr></thead><tbody>';
+            for (var i = 0; i < len; i++){
+                output += '<tr>';
+                //get data of elements
+                output += '<td>'+items[i].getElementsByTagName('address')[0].firstChild.nodeValue+'</td>';
+                output += '<td>'+items[i].getElementsByTagName('city')[0].firstChild.nodeValue+'</td>';
+                output += '<td>'+items[i].getElementsByTagName('state')[0].firstChild.nodeValue+'</td>';
+                output += '<td>'+items[i].getElementsByTagName('zipcode')[0].firstChild.nodeValue+'</td>';
+                output += '<td>'+items[i].getElementsByTagName('amount')[0].firstChild.nodeValue+'</td>';
+                
+                output += '</tr>';
+            }
+            output += '</tbody></table>';
+            
+            //output result in response div
+            response.innerHTML = output;
+            
+        }
+
+
+        function textToXML (text) {
+          try {
+            var xml = null;
+            if ( window.DOMParser ) {
+              var parser = new DOMParser();
+              xml = parser.parseFromString( text, "text/xml" );
+              var found = xml.getElementsByTagName( "parsererror" );
+              if ( !found || !found.length || !found[ 0 ].childNodes.length ) {
+                return xml;
+              }
+              return null;
+            } else {
+              xml = new ActiveXObject( "Microsoft.XMLDOM" );
+              xml.async = false;
+              xml.loadXML( text );
+              return xml;
+            }
+          } catch (e) {
+            console.log(e.error);
+          }
+        }
+    </script>
+
+    <div id="content">
+        <article>
+            <section>
+                <ul id="tabs">
+                      <li class="tab-header active" id="tab-header-1">map</li>
+                      <li class="tab-header" id="tab-header-2">calculation</li>
+                      <li class="tab-header" id="tab-header-3">comparison</li>
+                </ul>
+                <!--tab1-->
+                <div class="tab-content active" id="tab-content-1">
+                map content
+                </div>
+                <!--end of tab1-->
+                <!--tab2-->
+                <div class="tab-content hidden" id="tab-content-2">
+                    <form id="calculator" >
+                        <h4>Loan Calculator</h4><hr><br>
+                            <label>Loan Amount </label>
+                            <input type="number" name="loanAmount" id="loanAmount" onblur="loanAmount_onblur()" size="28">
+                         <div id="error1" class="errorMessage"><br></div>
+                            <label>Interest</label>
+                            <input type="number" step="any" name="interest" id="interest" onblur="interest_onblur()" size="28">
+                         <div id="error2" class="errorMessage"><br></div>
+                            <label>Number of Months</label>
+                            <input type="number" name="numOfMonths" id="numOfMonths" onblur="numOfMonths_onblur()" size="28"/>
+                         <div id="error3" class="errorMessage"><br></div>
+                            <button name="calculatePayment" id="calculatePayment" type="button" onclick="calculate();toggle_visibility();" value="calculate">Get Monthly Amount</button>
+                    </form>
+                    <div id="amount" style="visibility:hidden;">
+                        <p><strong>Your monthly paymount is:<br> 
+                        <span id="result">result is here</span></strong> </p>
+                    </div>  
+                </div> 
+                <!--tab2 validation caculation--> 
+                <script>
+                   function loanAmount_onblur()
+                   {
+                        if  (calculator.loanAmount.value == "" || calculator.loanAmount.value <= 0)
+                        {
+                            document.getElementById("error1").innerHTML = 'you must enter a positive whole number greater than zero<br>';
+                        calculator.loanAmount.focus();                       
+                        }
+                        else
+                        {
+                            document.getElementById("error1").innerHTML = '<br>';
+                             calculator.interest.focus();                                   
+                        }
+                    }
+                    
+                   function interest_onblur()
+                   {
+                        if  (calculator.interest.value < .1)
+                        {
+                            document.getElementById("error2").innerHTML = 'you must enter a number greater than or equal to 0.1<br>';
+                        calculator.interest.focus();
+                       calculator.interest.select();
+                        }
+                        else
+                        {
+                            document.getElementById("error2").innerHTML = '<br>';
+                             calculator.numOfMonths.focus();                                    
+                        }
+                    }
+                        
+                   function numOfMonths_onblur()
+                   {
+                        if  (calculator.numOfMonths.value <=0)
+                        {
+                            document.getElementById("error3").innerHTML = 'you must enter a positive whole number greater than zero<br>';
+                                calculator.numOfMonths.focus();                          
+                        }
+                        else
+                        {
+                            document.getElementById("error3").innerHTML = '<br>';
+                             calculator.calculatePayment.focus();         
+                        }
+                    }
+                                            
+                    function calculate(loanAmount,interest,numOfMonths)
+                    {
+                            var loanAmount = document.getElementById("loanAmount").value;
+                            var interest = document.getElementById("interest").value;
+                            var numOfMonths = document.getElementById("numOfMonths").value;
+
+                            interest = interest/1200;
+                            var denominator = Math.pow((1+interest),numOfMonths)-1;
+                            result =  (interest + interest/denominator)*loanAmount;
+                            result = Math.round(result * 100) / 100;
+                            document.getElementById("result").innerHTML = "$"+result;	
+                            console.log(result);
+                    }
+                        
+                    function toggle_visibility()
+                    {
+                            document.getElementById('amount').style.visibility="visible";
+                    }  
+                </script>
+                <!--end of tab2-->                    
+                <!--tab 3-->
+                <div class="tab-content hidden" id="tab-content-3">
+                    <h4>Houses Nearby:</h4> 
+                    <table cellpadding="5" cellspacing="0" width="90%">
+                      <tr>
+                            <th height="20">Address</th>
+                            <th>City</th>
+                            <th>State</th>
+                            <th>Zip</th>
+                            <th>Amount</th>
+                      </tr>		                
+                      <tr>
+                            <td>xxx</td>
+                            <td>xxx</td>
+                            <td>xxx</td>
+                            <td>xxx</td>
+                            <td>xxx</td>
+                      </tr>              
+                    </table>
+                     <div id="response"></div>
+                </div> 
+                <!--end of tab3-->
+            </section>
+            <footer>WEB 230 project <span> by Jia Liu</span> Sep 2015</footer>
+        </article>
+    </div>
+</div>
+    <!---tabbed panel-->
+<script>
+    document.addEventListener('DOMContentLoaded',function(){
+    var tabHeaders = document.getElementsByClassName('tab-header');
+        for (var i = 0; i < tabHeaders.length; i++){
+            tabHeaders[i].addEventListener('click',activateTab);
+        } 
+        
+    function activateTab(event) {
+       var myID = this.id; //tab-header-1,
+           contentID = myID.replace('header','content');
+              
+        document.getElementById('tab-header-1').className = 'tab-header ';
+        document.getElementById('tab-header-2').className = 'tab-header ';
+        document.getElementById('tab-header-3').className = 'tab-header ';
+        document.getElementById('tab-content-1').className = 'tab-content hidden';
+        document.getElementById('tab-content-2').className = 'tab-content hidden';
+        document.getElementById('tab-content-3').className = 'tab-content hidden';
+          /*console.log(contentID);*/
+        document.getElementById(myID).className = 'tab-header active';
+        document.getElementById(contentID).className = 'tab-content active';        
+    } }
+    );
+</script>
+    
+<!-- Google Map-->
+<script>
+    var map;
+        function initMap() {
+            
+            var myLatLng = {lat: 34.397, lng: 131.044};
+            
+            map = new google.maps.Map(document.getElementById('tab-content-1'), {
+                center: {lat: 34.397, lng: 150.644},
+                zoom: 12,
+                center: myLatLng
+    });
+            
+             var marker = new google.maps.Marker({
+                 position: myLatLng,
+                 map: map,
+                 title: 'Hello World!'
+  });            
+ }
+</script>
+
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBoqPBwdLwyaVluFytvPJTEfIKWUYdKT-E&callback=initMap">
+</script>
+    
+</body>
+
+</html>
